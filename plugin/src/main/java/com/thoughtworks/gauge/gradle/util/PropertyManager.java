@@ -21,12 +21,9 @@ package com.thoughtworks.gauge.gradle.util;
 
 import com.thoughtworks.gauge.gradle.GaugeExtension;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 @SuppressWarnings("ConstantConditions")
 public class PropertyManager {
@@ -37,10 +34,14 @@ public class PropertyManager {
     private static final String IN_PARALLEL = "inParallel";
     private static final String ADDITIONAL_FLAGS = "additionalFlags";
     private static final String GAUGE_ROOT = "gaugeRoot";
-    private static final String RUNTIME = "runtime";
     private static final String CLASSES = "/classes";
     private final String FAILED = "--failed";
     private final String REPEAT = "--repeat";
+    private static final Set<String> RUNTIME_CONFIGS = new HashSet<>(Arrays.asList(
+            "runtime",
+            "testRuntime",
+            "testRuntimeClasspath",
+            "runtimeClasspath"));
 
     private Project project;
     private GaugeExtension extension;
@@ -109,16 +110,12 @@ public class PropertyManager {
     }
 
     private void setClasspath() {
-        HashSet<String> classpaths = new HashSet<>();
-        String classpath = "";
+        Set<String> classpaths = new LinkedHashSet<>();
 
-        addRuntimeClasspaths(classpaths);
         addBuildClasspaths(classpaths);
+        addRuntimeClasspaths(classpaths);
 
-        for (String path : classpaths) {
-            classpath += path + File.pathSeparator;
-        }
-        extension.setClasspath(classpath);
+        extension.setClasspath(String.join(File.pathSeparator, classpaths));
     }
 
     private void setGaugeRoot() {
@@ -128,21 +125,26 @@ public class PropertyManager {
         }
     }
 
-    private void addRuntimeClasspaths(HashSet<String> classPaths) {
-        for (Configuration configuration : project.getConfigurations()) {
-            if (configuration.getName().toLowerCase().endsWith(RUNTIME)) {
-                String fileList = configuration.getAsFileTree().getAsPath();
-                classPaths.addAll(Arrays.asList(fileList.split(File.pathSeparator)));
-            }
-        }
+    private void addRuntimeClasspaths(Set<String> classPaths) {
+
+        project.getConfigurations()
+                .stream()
+                .filter(c -> RUNTIME_CONFIGS.contains(c.getName()))
+                .forEach(configuration -> {
+                    String fileList = configuration.getAsFileTree().getAsPath();
+                    classPaths.addAll(Arrays.asList(fileList.split(File.pathSeparator)));
+                });
     }
 
-    private void addBuildClasspaths(HashSet<String> classPaths) {
+    private void addBuildClasspaths(Set<String> classPaths) {
         findFiles(project.getBuildDir().getAbsolutePath() + CLASSES, classPaths);
     }
 
-    private void findFiles(String dir, HashSet<String> classPaths) {
+    private void findFiles(String dir, Set<String> classPaths) {
         File files = new File(dir);
+        if (!files.exists()) {
+            return;
+        }
         for (File file : files.listFiles()) {
             if (file.isDirectory()) {
                 classPaths.add(file.getAbsolutePath());

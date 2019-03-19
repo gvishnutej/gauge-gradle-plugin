@@ -2,28 +2,25 @@ import com.thoughtworks.gauge.gradle.GaugeTask
 
 apply plugin: 'java'
 apply plugin: 'gauge'
-apply plugin: 'application'
 
 group = "my-gauge-tests"
 version = "1.1.0"
 
 description = "My Gauge Tests"
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 buildscript {
     repositories {
-//        Used for development
-//        maven {
-//            url "../../repo"
-//        }
         maven {
             url "http://dl.bintray.com/manupsunny/maven"
         }
         mavenCentral()
     }
     dependencies {
+        // For local development
+        classpath fileTree(include: ['*.jar'], dir: "$projectDir/../plugin/build/libs")
         classpath 'com.thoughtworks.gauge.gradle:gauge-gradle-plugin:+'
     }
 }
@@ -42,15 +39,15 @@ sourceSets {
 }
 
 dependencies {
-    specCompile(
+    specImplementation (
             'com.thoughtworks.gauge:gauge-java:+'
     )
-    testCompile (
+    testImplementation (
             'com.thoughtworks.gauge:gauge-java:+',
             'net.sourceforge.htmlunit:webdriver:2.6',
             'junit:junit:4.12'
     )
-    compile 'org.seleniumhq.selenium:selenium-firefox-driver:2.53.0'
+    implementation 'org.seleniumhq.selenium:selenium-firefox-driver:2.53.0'
 }
 
 gauge {
