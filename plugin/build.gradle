@@ -5,6 +5,7 @@ plugins {
     id "java-gradle-plugin"
     id 'com.jfrog.bintray' version "1.4"
     id "com.gradle.plugin-publish" version "0.10.1"
+    id "maven-publish"
 }
 
 dependencies {
@@ -17,6 +18,38 @@ dependencies {
 repositories {
     mavenCentral()
     jcenter()
+}
+Properties plugin = new Properties()
+plugin.load(project.file('../plugin.properties').newDataInputStream())
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId= "com.thoughtworks.gauge.gradle"
+            artifactId = "gauge-gradle-plugin"
+            from components.java
+
+            pom {
+                name = plugin.getProperty("name")
+                description = plugin.getProperty("description")
+                url = plugin.getProperty("siteUrl")
+
+                developers {
+                    developer {
+                        id = "manupsunny"
+                        name = "Manu Sunny"
+                        email = "manupsunny@gmail.com" // update this with fulfillment email
+                    }
+                }
+                scm {
+                    connection = "scm:git:git://github.com/manupsunny/gauge-gradle-plugin.git"
+                    developerConnection = 'scm:git:git://github.com/manupsunny/gauge-gradle-plugin.git'
+                    url = plugin.getProperty("siteUrl")
+                }
+            }
+
+        }
+    }
 }
 
 apply from: 'bintray.gradle'
